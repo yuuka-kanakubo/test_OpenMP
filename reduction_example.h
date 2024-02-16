@@ -11,13 +11,13 @@ class reduction_example{
 
 		private:
 			int Nx=10;
-			int Ny=5;
-			int Nz=5;
+			int Ny=50;
+			int Nz=20;
 			double fact=0.5;
 			double b = 0.0;
 			int ini_i = 0;
-			int ini_j = 0;
-			int ini_k = 0;
+			int ini_j = 2;
+			int ini_k = 4;
 
 
 		public:
@@ -52,6 +52,58 @@ class reduction_example{
 				return summation;
 			}
 
+			double take_sum5_5(){
+				int i, j, k;
+				double summation=0.;
+
+
+				#pragma omp parallel
+				{
+					double summation_private=0.;
+
+					#pragma omp for collapse(3)
+					for (i=ini_i; i<=Nx; i++){
+						for (j=ini_j; j<=Ny; j++){
+							for (k=ini_k; k<=Nz; k++){
+								summation_private+=fact*4.0+b;
+							}
+						}
+					}
+					#pragma omp critical
+					{
+						summation+=summation_private;
+					}
+				}
+
+				return summation;
+			}
+
+			double take_sum3_75(){
+				int i, j, k;
+				double summation=0.;
+
+
+				for (i=ini_i; i<=Nx; i++){
+					#pragma omp parallel
+					{
+						double summation_private=0.;
+
+						#pragma omp for collapse(2)
+						for (j=ini_j; j<=Ny; j++){
+							for (k=ini_k; k<=Nz; k++){
+								summation_private+=fact*4.0+b;
+							}
+						}
+						#pragma omp critical
+						{
+							summation+=summation_private;
+						}
+					}
+				}
+
+				return summation;
+			}
+
 			double take_sum(){
 				int i, j, k;
 				double summation=0.0;
@@ -75,6 +127,23 @@ class reduction_example{
 
 				for (i=ini_i; i<=Nx; i++){
 					#pragma omp parallel for reduction (+:summation)
+					for (j=ini_j; j<=Ny; j++){
+						for (k=ini_k; k<=Nz; k++){
+							summation+=fact*4.0+b;
+						}
+					}
+				}
+
+
+				return summation;
+			}
+
+			double take_sum3_5(){
+				int i, j, k;
+				double summation=0.0;
+
+				for (i=ini_i; i<=Nx; i++){
+					#pragma omp parallel for collapse(2) reduction (+:summation)
 					for (j=ini_j; j<=Ny; j++){
 						for (k=ini_k; k<=Nz; k++){
 							summation+=fact*4.0+b;
